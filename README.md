@@ -40,6 +40,7 @@ The choice of option here also must match one of the entry names for the presets
 command arguments:
 ---
   {QC,ALIGN,QUANT,CONCAT}
+  
     **QC**           >        Run FASTQC on a single file or group of files (default) within a directory.
     
     **ALIGN**      >        Run the GSNAP aligner on FASTQ file vs reference.

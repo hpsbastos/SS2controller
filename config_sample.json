@@ -1,0 +1,34 @@
+{
+	"slurm": {
+
+		"SL3-12h": {
+			"partition": "partition-name",
+			"account": "ACCOUNT-NAME",
+			"nodes": "1",
+			"time": "11:59:59"
+		},
+                "SL3-6h": {
+                        "partition": "some-other-partition-name",
+                        "account": "ACCOUNT-NAME",
+			"nodes": "1",
+                        "time": "05:59:59"
+                }
+	},
+
+
+
+
+	"references": {
+
+	    "human": {
+		        "gsnap": "/path/to/human/gsnap/reference",
+		        "gtf":"/path/to/human/reference.gtf"
+	    },
+
+	    "mouse": {
+	        	"gsnap": "/path/to/mouse/gsnap/reference",
+	        	"gtf": "/path/to/mouse/reference.gtf"
+	    }
+	}
+
+}

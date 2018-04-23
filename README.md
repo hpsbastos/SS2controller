@@ -41,8 +41,11 @@ command arguments:
 ---
   {QC,ALIGN,QUANT,CONCAT}
     **QC**           >        Run FASTQC on a single file or group of files (default) within a directory.
+    
     **ALIGN**      >        Run the GSNAP aligner on FASTQ file vs reference.
+    
     **QUANT**    >        Run the 'HTSeq count' quantifier.
+    
     **CONCAT**  >        Concatenate multiple counts files found at a target dir into a single counts file.
 
 

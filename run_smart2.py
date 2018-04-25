@@ -10,32 +10,6 @@ import warp_pipe as wp
     pipeline: FastQC > GSNAP > HTSEQ. 
 """
 
-def sbatch_cmd_prefix(settings, outdir):
-
-    """
-    Generates sbatch command prefix with
-    chosen argument options for SLURM job 
-    submission!
-    """
-
-    cmd = 'sbatch -p %s ' %settings['partition']
-
-    if 'account' in settings:
-        cmd += '-A %s ' %settings['account']
-    if 'nodes' in settings:
-        cmd += '-N %s ' %settings['nodes']
-    if 'tasks_per_node' in settings:
-        cmd += '--ntasks-per-node=%s ' %settings['tasks_per_node']
-    if 'time' in settings:
-        cmd += '-t %s ' %settings['time']
-    if 'qos' in settings:
-        cmd += '--qos=%s ' %settings['qos']
-
-    cmd += '-e %s/logs/slurm.%%N.%%j.err ' %outdir
-    cmd += '-o %s/logs/slurm-%%j.out' %outdir
-
-    return cmd
-
 
 def run_summons(target, outdir, suffix, **kwargs):
 
@@ -59,19 +33,7 @@ def run_summons(target, outdir, suffix, **kwargs):
         print('Command type option required!')
         sys.exit()
 
-    if args.slurm:
-        # string-wrap cmd for slurm
-        # as single argument string
-        cmd[0] = '--wrap="'+cmd[0]
-        cmd[-1] = cmd[-1]+'"'
-        cmd = ' '.join(cmd)
-        # prepend slurm cmd prefix
-        cmd = cmd_prefix.strip().split(' ') + [cmd]
-        runner.run_command_shell(cmd, target, outdir, suffix)
-
-    # for running outside SLURM ...
-    else:
-        runner.run_command(cmd, target, outdir, suffix, comm=False)
+    runner.run_command(cmd, target, outdir, suffix, comm=False)
 
 
 def create_dir(new_dir):
@@ -94,8 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--species', choices=['human', 'mouse'],
                          help='Reference species denomination.', action='store', 
                          required=True)
-    parser.add_argument('-S', '--slurm',  help="""SLURM settings group name
-                                                  for 'sbatch' submission.""")
+
     # -------------------------------------------------------------------------
 
     parser_qc = subparsers.add_parser('QC', help="""Run FASTQC on a single file
@@ -153,19 +114,6 @@ if __name__ == "__main__":
         print('There is something wrong with your JSON config file!')
         sys.exit()
 
-    # Process SLURM settings if requested
-    # -------------------------------------------------------------------------
-    if args.slurm:
-        try:
-            slurmsettings = config['slurm'][args.slurm]
-
-        except Exception as e: 
-            print('Could not find SLURM config option:', e)
-            sys.exit()
-
-        cmd_prefix = sbatch_cmd_prefix(slurmsettings, args.outdir)
-    else:
-        cmd_prefix = None
 
     # Logging
     # -------------------------------------------------------------------------
@@ -215,7 +163,7 @@ if __name__ == "__main__":
             if len(files) == 0:
                 print('Unable to find any fastq file at ', args.workfolder)
                 sys.exit()
-            inspector.run_fastqc(files, qc_out_dir, cmd_prefix)
+            inspector.run_fastqc(files, qc_out_dir)
 
     # ------------------------------------------------------------------------ 
 
@@ -235,8 +183,6 @@ if __name__ == "__main__":
         if args.file:
             print('Aligning...\n', args.file.name)
             cmd = runner.cat_gSNAP_cmd(args.file.name)
-            if args.slurm:
-                cmd = cmd_prefix + cmd
             runner.run_command(cmd, args.file.name, args.workfolder, '.sam', 
                                comm=False)
         # directory
@@ -271,8 +217,6 @@ if __name__ == "__main__":
         if args.file:
             print('Quantifying...\n', args.file.name)
             cmd = runner.cat_HTSeq_cmd(args.file.name)
-            if args.slurm:
-                cmd = cmd_prefix + cmd
             runner.run_command(cmd, args.file.name, args.workfolder, 
                               '_count.txt', comm=False)
 
@@ -310,15 +254,12 @@ if __name__ == "__main__":
 
     # -------------------------------------------------------------------------
 
-    # because otherwise when it is slurm submitted this is immediatly triggered
-    if args.slurm == None:
-
-        t_final = dt.now()
-        log.write("\n")
-        log.write("All done at %.2i:%.2i:%.2i\n" % (t_final.hour, 
-                                                    t_final.minute,
-                                                    t_final.second) )
-        log.write("Everything took " + str( (t_final-t0).seconds ) + \
-                  " seconds to complete!")
+    t_final = dt.now()
+    log.write("\n")
+    log.write("All done at %.2i:%.2i:%.2i\n" % (t_final.hour, 
+                                                t_final.minute,
+                                                t_final.second) )
+    log.write("Everything took " + str( (t_final-t0).seconds ) + \
+              " seconds to complete!")
 
     log.close()

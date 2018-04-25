@@ -24,7 +24,7 @@ class Seamstress(object):
 
         self.fastqcbin = FASTQCBIN
 
-    def run_fastqc(self, target, qc_out=None, prefix=None):
+    def run_fastqc(self, target, qc_out=None):
 
         """
             Submits single or multiple FASTQ files to FastQC.
@@ -57,19 +57,8 @@ class Seamstress(object):
 
             c1 = [self.fastqcbin, "-o", qc_out, "-t", str(thr_n), "-q"]
 
-            if prefix == None:
-                cmd = c1 + [t for t in target]
-                subprocess.check_call(cmd)
-
-            # via SLURM...
-            else:
-                prefix = prefix.strip().split(' ')
-                tail = c1 + [t for t in target]
-                suffix = '--wrap="'+' '.join(tail)+'"'
-                cmd = prefix + [suffix]                
-                cmd = ' '.join(cmd)
-                subprocess.call(cmd, shell=True)
-
+            cmd = c1 + [t for t in target]
+            subprocess.check_call(cmd)
 
     # -------------------------------------------------------------------------   
 
@@ -173,41 +162,4 @@ class PipeRunner(object):
                 c = process.poll()
             output = process.stdout.readline().decode()
 
-
     # -------------------------------------------------------------------------
-
-
-    def run_command_shell(self, command, fname, outdir, suffix):
-
-        """
-        Submit a command that needs to be run in a shell 
-        (SLURM submissions) and that requires that STDOUT 
-        is redirected into a specified output file.
-        """
-
-        # handles suffixing the cmd string with redirector galore
-        basename = os.path.splitext(os.path.basename(fname))[0]
-        outname = os.path.join(outdir, basename + suffix)
-
-        # HARDCODED fiddly-VERY-specific bit
-        # ---------------------------------------------
-        pf = 'AL_' if command[-1][8] == 'g' else 'QT_'
-        jobname = pf+basename[:19]
-        #jobname = basename[:19]
-                             
-        command = command[:-1] + ['--job-name='+jobname] + [command[-1]]
-        command = ' '.join(command)
-        command = command[:-1] + ' > '+outname+'"'
-
-        try:
-            retcode = subprocess.call(command, shell=True)
-            if retcode < 0:
-                print("Child was terminated by signal", 
-                        -retcode, file=sys.stderr)
-            else:
-                pass
-                # print("Child returned", retcode, file=sys.stderr)
-        except OSError as e:
-            print("Execution failed:", e, file=sys.stderr)
-
-# -----------------------------------------------------------------------------
